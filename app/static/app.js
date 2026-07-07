@@ -154,7 +154,7 @@ function renderPatients(data = null) {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" class="empty-state">
-          <div>👤</div>
+          <div><i class="fa-solid fa-person"></i></div>
           <h3>No patients found</h3>
           <p>Click "Add Patient" to create your first record</p>
         </td>
@@ -173,8 +173,13 @@ function renderPatients(data = null) {
       <td>${p.phone}</td>
       <td>${p.email}</td>
       <td>
-        <button class="btn btn-secondary btn-sm" onclick="editPatient('${p.id}')">✎</button>
-        <button class="btn btn-danger btn-sm" onclick="deletePatient('${p.id}')">✕</button>
+       <button class="btn btn-secondary btn-sm" onclick="editPatient('${p.id}')">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </button>
+
+      <button class="btn btn-danger btn-sm" onclick="deletePatient('${p.id}')">
+        <i class="fa-solid fa-trash"></i>
+      </button>
       </td>
     </tr>
   `).join('');
