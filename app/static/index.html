@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinic Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h1 class="logo"><i class="fa-solid fa-house-chimney-medical"></i> Clinic</h1>
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+            <span class="theme-icon"><i class="fa-solid fa-moon"></i></span>
+          </button>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-view="dashboard">
+            <span class="nav-icon"><i class="fa-brands fa-gitkraken"></i></span>
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="patients">
+            <span class="nav-icon"><i class="fa-solid fa-person"></i></span>
+            <span>Patients</span>
+          </button>
+          <button class="nav-item" data-view="doctors">
+            <span class="nav-icon"><i class="fa-solid fa-user-doctor"></i></span>
+            <span>Doctors</span>
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main">
+        <!-- Header -->
+        <header class="main-header">
+          <div class="header-left">
+            <h2 id="pageTitle">Dashboard</h2>
+            <p id="pageSubtitle" class="subtitle">Overview of your clinic</p>
+          </div>
+          <div class="header-right">
+            <button class="btn btn-primary" id="addBtn">+ Add New</button>
+          </div>
+        </header>
+
+        <!-- Dashboard View -->
+        <section id="view-dashboard" class="view active">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Total Patients</span>
+              <span class="stat-value" id="totalPatients">0</span>
+              <span class="stat-change">+12% this month</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Total Doctors</span>
+              <span class="stat-value" id="totalDoctors">0</span>
+              <span class="stat-change">+4 new this month</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Active Appointments</span>
+              <span class="stat-value" id="totalAppointments">0</span>
+              <span class="stat-change">Today</span>
+            </div>
+          </div>
+          <div class="recent-section">
+            <h3>Recent Patients</h3>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Added</th>
+                  </tr>
+                </thead>
+                <tbody id="recentPatients"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Patients View -->
+        <section id="view-patients" class="view">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <input type="text" id="patientSearch" placeholder="Search patients..." />
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-secondary" id="refreshPatients">⟳ Refresh</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Gender</th>
+                  <th>DOB</th>
+                  <th>Blood</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="patientsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Doctors View -->
+        <section id="view-doctors" class="view">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <input type="text" id="doctorSearch" placeholder="Search doctors..." />
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-secondary" id="refreshDoctors">⟳ Refresh</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Specialization</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Experience</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="doctorsTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modalTitle">Add New</h3>
+          <button class="modal-close" id="modalClose">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- Dynamic content -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
