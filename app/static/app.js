@@ -1,4 +1,5 @@
 const API_BASE = window.location.origin;
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 // State
 let currentView = 'dashboard';
@@ -24,6 +25,16 @@ const modalBody = document.getElementById('modalBody');
 const modalClose = document.getElementById('modalClose');
 const toastContainer = document.getElementById('toastContainer');
 const themeToggle = document.getElementById('themeToggle');
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 // Theme Management
 function initTheme() {
@@ -168,7 +179,7 @@ function renderPatients(data = null) {
       <td><code>${p.id.slice(0, 8)}</code></td>
       <td><strong>${p.name}</strong></td>
       <td>${p.gender}</td>
-      <td>${p.dob}</td>
+      <td>${formatDate(p.dob)}</td>
       <td>${p.blood_group}</td>
       <td>${p.phone}</td>
       <td>${p.email}</td>
@@ -186,56 +197,40 @@ function renderPatients(data = null) {
 }
 
 async function createPatient(data) {
-  try {
-    const result = await apiFetch('/patients', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    showToast('Patient created successfully!');
-    closeModal();
-    fetchPatients();
-    updateStats();
-    return result;
-  } catch (error) {
-    throw error;
-  }
+  const result = await apiFetch('/patients', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  showToast('Patient created successfully!');
+  closeModal();
+  fetchPatients();
+  updateStats();
+  return result;
 }
 
 async function updatePatient(id, data) {
-  try {
-    const result = await apiFetch(`/patients/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    showToast('Patient updated successfully!');
-    closeModal();
-    fetchPatients();
-    return result;
-  } catch (error) {
-    throw error;
-  }
+  const result = await apiFetch(`/patients/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  showToast('Patient updated successfully!');
+  closeModal();
+  fetchPatients();
+  return result;
 }
 
 async function deletePatient(id) {
   if (!confirm('Are you sure you want to delete this patient?')) return;
-  try {
-    await apiFetch(`/patients/${id}`, { method: 'DELETE' });
-    showToast('Patient deleted successfully!');
-    fetchPatients();
-    updateStats();
-  } catch (error) {
-    // Error already handled
-  }
+  await apiFetch(`/patients/${id}`, { method: 'DELETE' });
+  showToast('Patient deleted successfully!');
+  fetchPatients();
+  updateStats();
 }
 
 async function editPatient(id) {
-  try {
-    const patient = await apiFetch(`/patients/${id}`);
-    editingPatientId = id;
-    openModal('Edit Patient', getPatientForm(patient));
-  } catch (error) {
-    // Error already handled
-  }
+  const patient = await apiFetch(`/patients/${id}`);
+  editingPatientId = id;
+  openModal('Edit Patient', getPatientForm(patient));
 }
 
 function getPatientForm(data = {}) {
@@ -258,7 +253,7 @@ function getPatientForm(data = {}) {
         </div>
         <div class="form-group">
           <label>Date of Birth</label>
-          <input type="date" id="p_dob" value="${p.dob || ''}" required />
+          <input type="date" id="p_dob" value="${formatDate(p.dob) || ''}" required />
         </div>
       </div>
       <div class="form-row">
@@ -303,7 +298,7 @@ async function fetchDoctors() {
 function renderDoctors(data = null) {
   const tbody = document.getElementById('doctorsTable');
   const list = data || doctors;
-  
+
   if (!list || list.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -316,8 +311,8 @@ function renderDoctors(data = null) {
     `;
     return;
   }
-  
-  tbody.innerHTML = list.map(d => `
+
+  tbody.innerHTML = list.map((d) => `
     <tr>
       <td><code>${d.id.slice(0, 8)}</code></td>
       <td><strong>${d.name}</strong></td>
@@ -326,77 +321,137 @@ function renderDoctors(data = null) {
       <td>${d.email}</td>
       <td>${d.experience_years} years</td>
       <td>
-        <button class="btn btn-secondary btn-sm" onclick="editDoctor('${d.id}')">✎</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteDoctor('${d.id}')">✕</button>
+        <button class="btn btn-secondary btn-sm" onclick="editDoctor('${d.id}')">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDoctor('${d.id}')">
+          <i class="fa-solid fa-trash"></i>
+        </button>
       </td>
     </tr>
   `).join('');
 }
 
 async function createDoctor(data) {
-  try {
-    const result = await apiFetch('/doctors', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    showToast('Doctor created successfully!');
-    closeModal();
-    fetchDoctors();
-    updateStats();
-    return result;
-  } catch (error) {
-    throw error;
-  }
+  const result = await apiFetch('/doctors', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  showToast('Doctor created successfully!');
+  closeModal();
+  fetchDoctors();
+  updateStats();
+  return result;
 }
 
 async function updateDoctor(id, data) {
-  try {
-    const result = await apiFetch(`/doctors/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    showToast('Doctor updated successfully!');
-    closeModal();
-    fetchDoctors();
-    return result;
-  } catch (error) {
-    throw error;
-  }
+  const result = await apiFetch(`/doctors/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  showToast('Doctor updated successfully!');
+  closeModal();
+  fetchDoctors();
+  return result;
 }
 
 async function deleteDoctor(id) {
   if (!confirm('Are you sure you want to delete this doctor?')) return;
-  try {
-    await apiFetch(`/doctors/${id}`, { method: 'DELETE' });
-    showToast('Doctor deleted successfully!');
-    fetchDoctors();
-    updateStats();
-  } catch (error) {
-    // Error already handled
-  }
+  await apiFetch(`/doctors/${id}`, { method: 'DELETE' });
+  showToast('Doctor deleted successfully!');
+  fetchDoctors();
+  updateStats();
 }
 
 async function editDoctor(id) {
-  try {
-    const doctor = await apiFetch(`/doctors/${id}`);
-    editingDoctorId = id;
-    openModal('Edit Doctor', getDoctorForm(doctor));
-  } catch (error) {
-    // Error already handled
+  const doctor = await apiFetch(`/doctors/${id}`);
+  editingDoctorId = id;
+  openModal('Edit Doctor', getDoctorForm(doctor));
+}
+
+function showFieldError(inputId, message) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const existing = input.parentElement.querySelector('.field-error');
+  if (existing) existing.remove();
+
+  input.classList.add('field-error-input');
+  const error = document.createElement('div');
+  error.className = 'field-error';
+  error.textContent = message;
+  input.parentElement.appendChild(error);
+}
+
+function clearFieldErrors(form) {
+  form.querySelectorAll('.field-error-input').forEach((input) => input.classList.remove('field-error-input'));
+  form.querySelectorAll('.field-error').forEach((error) => error.remove());
+}
+
+function validatePatientForm() {
+  const errors = [];
+  const name = document.getElementById('p_name').value.trim();
+  const phone = document.getElementById('p_phone').value.trim();
+  const email = document.getElementById('p_email').value.trim();
+  const address = document.getElementById('p_address').value.trim();
+  const dob = document.getElementById('p_dob').value;
+
+  if (!name) {
+    errors.push({ field: 'p_name', message: 'Name is required.' });
   }
+  if (!dob) {
+    errors.push({ field: 'p_dob', message: 'Date of birth is required.' });
+  }
+  if (!phone || !/^\+92\d{10}$/.test(phone.replace(/\s+/g, ''))) {
+    errors.push({ field: 'p_phone', message: 'Phone must be in +92XXXXXXXXXX format.' });
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push({ field: 'p_email', message: 'Enter a valid email address.' });
+  }
+  if (!address) {
+    errors.push({ field: 'p_address', message: 'Address is required.' });
+  }
+
+  return errors;
+}
+
+function validateDoctorForm() {
+  const errors = [];
+  const name = document.getElementById('d_name').value.trim();
+  const specialization = document.getElementById('d_specialization').value.trim();
+  const phone = document.getElementById('d_phone').value.trim();
+  const email = document.getElementById('d_email').value.trim();
+  const experience = document.getElementById('d_experience').value;
+
+  if (!name) {
+    errors.push({ field: 'd_name', message: 'Name is required.' });
+  }
+  if (!specialization) {
+    errors.push({ field: 'd_specialization', message: 'Specialization is required.' });
+  }
+  if (!phone || !/^\+92\d{10}$/.test(phone.replace(/\s+/g, ''))) {
+    errors.push({ field: 'd_phone', message: 'Phone must be in +92XXXXXXXXXX format.' });
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push({ field: 'd_email', message: 'Enter a valid email address.' });
+  }
+  if (!experience || Number(experience) < 0) {
+    errors.push({ field: 'd_experience', message: 'Experience must be 0 or more.' });
+  }
+
+  return errors;
 }
 
 function getDoctorForm(data = {}) {
   const d = data;
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  
+
   const availabilityHtml = d.availability && d.availability.length > 0
     ? d.availability.map((slot, i) => `
         <div class="form-row" style="margin-bottom: 8px;">
           <div class="form-group">
             <label>Day</label>
             <select class="av_day">
-              ${days.map(day => `<option value="${day}" ${slot.day === day ? 'selected' : ''}>${day}</option>`).join('')}
+              ${DAYS.map(day => `<option value="${day}" ${slot.day === day ? 'selected' : ''}>${day}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
@@ -446,7 +501,7 @@ function getDoctorForm(data = {}) {
               <div class="form-group">
                 <label>Day</label>
                 <select class="av_day">
-                  ${days.map(day => `<option value="${day}">${day}</option>`).join('')}
+                  ${DAYS.map(day => `<option value="${day}">${day}</option>`).join('')}
                 </select>
               </div>
               <div class="form-group">
@@ -480,12 +535,11 @@ function addAvailabilityRow() {
   const row = document.createElement('div');
   row.className = 'form-row';
   row.style.marginBottom = '8px';
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   row.innerHTML = `
     <div class="form-group">
       <label>Day</label>
       <select class="av_day">
-        ${days.map(day => `<option value="${day}">${day}</option>`).join('')}
+        ${DAYS.map(day => `<option value="${day}">${day}</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
@@ -507,6 +561,14 @@ function addAvailabilityRow() {
 document.addEventListener('submit', async (e) => {
   if (e.target.id === 'patientForm') {
     e.preventDefault();
+    clearFieldErrors(e.target);
+    const errors = validatePatientForm();
+    if (errors.length) {
+      errors.forEach(({ field, message }) => showFieldError(field, message));
+      showToast('Please correct the highlighted fields.', 'error');
+      return;
+    }
+
     const data = {
       name: document.getElementById('p_name').value,
       gender: document.getElementById('p_gender').value,
@@ -530,6 +592,14 @@ document.addEventListener('submit', async (e) => {
   
   if (e.target.id === 'doctorForm') {
     e.preventDefault();
+    clearFieldErrors(e.target);
+    const errors = validateDoctorForm();
+    if (errors.length) {
+      errors.forEach(({ field, message }) => showFieldError(field, message));
+      showToast('Please correct the highlighted fields.', 'error');
+      return;
+    }
+
     const availability = [];
     document.querySelectorAll('#availabilityContainer .form-row').forEach(row => {
       availability.push({
@@ -601,30 +671,74 @@ async function updateStats() {
   }
 }
 
+async function lookupPatientById(query) {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) {
+    renderPatients(patients);
+    return;
+  }
+
+  try {
+    const patient = await apiFetch(`/patients/${encodeURIComponent(trimmedQuery)}`);
+    renderPatients([patient]);
+  } catch (error) {
+    const filtered = patients.filter((p) => {
+      const haystack = `${p.name} ${p.email} ${p.phone}`.toLowerCase();
+      return haystack.includes(trimmedQuery.toLowerCase());
+    });
+
+    renderPatients(filtered);
+    if (!filtered.length) {
+      showToast('No patient found for that ID or search term.', 'error');
+    }
+  }
+}
+
 // Search
-document.getElementById('patientSearch')?.addEventListener('input', (e) => {
-  const query = e.target.value.toLowerCase();
-  const filtered = patients.filter(p => 
-    p.name.toLowerCase().includes(query) ||
-    p.email.toLowerCase().includes(query) ||
-    p.phone.includes(query)
-  );
-  renderPatients(filtered);
+document.getElementById('patientSearch')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    lookupPatientById(e.target.value);
+  }
 });
 
-document.getElementById('doctorSearch')?.addEventListener('input', (e) => {
-  const query = e.target.value.toLowerCase();
-  const filtered = doctors.filter(d => 
-    d.name.toLowerCase().includes(query) ||
-    d.specialization.toLowerCase().includes(query) ||
-    d.email.toLowerCase().includes(query)
-  );
-  renderDoctors(filtered);
+document.getElementById('patientSearchBtn')?.addEventListener('click', () => {
+  lookupPatientById(document.getElementById('patientSearch').value);
 });
 
-// Refresh buttons
-document.getElementById('refreshPatients')?.addEventListener('click', fetchPatients);
-document.getElementById('refreshDoctors')?.addEventListener('click', fetchDoctors);
+async function lookupDoctorById(query) {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) {
+    renderDoctors(doctors);
+    return;
+  }
+
+  try {
+    const doctor = await apiFetch(`/doctors/${encodeURIComponent(trimmedQuery)}`);
+    renderDoctors([doctor]);
+  } catch (error) {
+    const filtered = doctors.filter((d) => {
+      const haystack = `${d.name} ${d.specialization} ${d.email}`.toLowerCase();
+      return haystack.includes(trimmedQuery.toLowerCase());
+    });
+
+    renderDoctors(filtered);
+    if (!filtered.length) {
+      showToast('No doctor found for that ID or search term.', 'error');
+    }
+  }
+}
+
+document.getElementById('doctorSearch')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    lookupDoctorById(e.target.value);
+  }
+});
+
+document.getElementById('doctorSearchBtn')?.addEventListener('click', () => {
+  lookupDoctorById(document.getElementById('doctorSearch').value);
+});
 
 // Add button
 addBtn.addEventListener('click', () => {

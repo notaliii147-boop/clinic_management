@@ -7,7 +7,7 @@ def register_exception_handlers(app: FastAPI):
     """Register custom exception handlers for the FastAPI app"""
 
     @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, exc: HTTPException):
+    async def http_exception_handler(_request: Request, exc: HTTPException):
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -18,7 +18,7 @@ def register_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    async def validation_exception_handler(_request: Request, exc: RequestValidationError):
         errors = []
         for error in exc.errors():
             field = ".".join(str(loc) for loc in error["loc"])
@@ -38,7 +38,7 @@ def register_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(Exception)
-    async def general_exception_handler(request: Request, exc: Exception):
+    async def general_exception_handler(_request: Request, exc: Exception):
         return JSONResponse(
             status_code=500,
             content={
