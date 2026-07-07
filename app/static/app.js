@@ -36,6 +36,15 @@ function formatDate(value) {
   return `${year}-${month}-${day}`;
 }
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Theme Management
 function initTheme() {
   const saved = localStorage.getItem('theme') || 'light';
@@ -175,22 +184,21 @@ function renderPatients(data = null) {
   }
   
   tbody.innerHTML = list.map(p => `
-    <tr>
+    <tr class="clickable-row" onclick="showPatientDetails('${p.id}')">
       <td><code>${p.id.slice(0, 8)}</code></td>
-      <td><strong>${p.name}</strong></td>
-      <td>${p.gender}</td>
+      <td><strong>${escapeHtml(p.name)}</strong></td>
+      <td>${escapeHtml(p.gender)}</td>
       <td>${formatDate(p.dob)}</td>
-      <td>${p.blood_group}</td>
-      <td>${p.phone}</td>
-      <td>${p.email}</td>
+      <td>${escapeHtml(p.blood_group)}</td>
+      <td>${escapeHtml(p.phone)}</td>
+      <td>${escapeHtml(p.email)}</td>
       <td>
-       <button class="btn btn-secondary btn-sm" onclick="editPatient('${p.id}')">
-        <i class="fa-solid fa-pen-to-square"></i>
-      </button>
-
-      <button class="btn btn-danger btn-sm" onclick="deletePatient('${p.id}')">
-        <i class="fa-solid fa-trash"></i>
-      </button>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); editPatient('${p.id}')">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deletePatient('${p.id}')">
+          <i class="fa-solid fa-trash"></i>
+        </button>
       </td>
     </tr>
   `).join('');
@@ -231,6 +239,31 @@ async function editPatient(id) {
   const patient = await apiFetch(`/patients/${id}`);
   editingPatientId = id;
   openModal('Edit Patient', getPatientForm(patient));
+}
+
+async function showPatientDetails(id) {
+  const patient = await apiFetch(`/patients/${id}`);
+  const content = `
+    <div class="detail-card">
+      <div class="detail-header">
+        <div class="detail-icon"><i class="fa-solid fa-circle-user"></i></div>
+        <div>
+          <h4>${escapeHtml(patient.name)}</h4>
+          <p>${escapeHtml(patient.gender)} • ${escapeHtml(patient.blood_group)}</p>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div><span class="detail-label">ID</span><span>${escapeHtml(patient.id)}</span></div>
+        <div><span class="detail-label">DOB</span><span>${formatDate(patient.dob)}</span></div>
+        <div><span class="detail-label">Phone</span><span>${escapeHtml(patient.phone)}</span></div>
+        <div><span class="detail-label">Email</span><span>${escapeHtml(patient.email)}</span></div>
+        <div><span class="detail-label">Address</span><span>${escapeHtml(patient.address)}</span></div>
+        <div><span class="detail-label">Created</span><span>${escapeHtml(patient.created_at)}</span></div>
+        <div><span class="detail-label">Updated</span><span>${escapeHtml(patient.updated_at)}</span></div>
+      </div>
+    </div>
+  `;
+  openModal('Patient Details', content);
 }
 
 function getPatientForm(data = {}) {
@@ -313,18 +346,18 @@ function renderDoctors(data = null) {
   }
 
   tbody.innerHTML = list.map((d) => `
-    <tr>
+    <tr class="clickable-row" onclick="showDoctorDetails('${d.id}')">
       <td><code>${d.id.slice(0, 8)}</code></td>
-      <td><strong>${d.name}</strong></td>
-      <td>${d.specialization}</td>
-      <td>${d.phone}</td>
-      <td>${d.email}</td>
-      <td>${d.experience_years} years</td>
+      <td><strong>${escapeHtml(d.name)}</strong></td>
+      <td>${escapeHtml(d.specialization)}</td>
+      <td>${escapeHtml(d.phone)}</td>
+      <td>${escapeHtml(d.email)}</td>
+      <td>${escapeHtml(d.experience_years)} years</td>
       <td>
-        <button class="btn btn-secondary btn-sm" onclick="editDoctor('${d.id}')">
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); editDoctor('${d.id}')">
           <i class="fa-solid fa-pen-to-square"></i>
         </button>
-        <button class="btn btn-danger btn-sm" onclick="deleteDoctor('${d.id}')">
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteDoctor('${d.id}')">
           <i class="fa-solid fa-trash"></i>
         </button>
       </td>
@@ -367,6 +400,37 @@ async function editDoctor(id) {
   const doctor = await apiFetch(`/doctors/${id}`);
   editingDoctorId = id;
   openModal('Edit Doctor', getDoctorForm(doctor));
+}
+
+async function showDoctorDetails(id) {
+  const doctor = await apiFetch(`/doctors/${id}`);
+  const availability = (doctor.availability || []).map((slot) => `
+    <li>${escapeHtml(slot.day)} • ${escapeHtml(slot.start_time)} - ${escapeHtml(slot.end_time)}</li>
+  `).join('');
+
+  const content = `
+    <div class="detail-card">
+      <div class="detail-header">
+        <div class="detail-icon"><i class="fa-solid fa-user-doctor"></i></div>
+        <div>
+          <h4>${escapeHtml(doctor.name)}</h4>
+          <p>${escapeHtml(doctor.specialization)} • ${escapeHtml(doctor.experience_years)} years</p>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div><span class="detail-label">ID</span><span>${escapeHtml(doctor.id)}</span></div>
+        <div><span class="detail-label">Phone</span><span>${escapeHtml(doctor.phone)}</span></div>
+        <div><span class="detail-label">Email</span><span>${escapeHtml(doctor.email)}</span></div>
+        <div><span class="detail-label">Created</span><span>${escapeHtml(doctor.created_at)}</span></div>
+        <div><span class="detail-label">Updated</span><span>${escapeHtml(doctor.updated_at)}</span></div>
+      </div>
+      <div class="detail-section">
+        <h5>Availability</h5>
+        <ul class="detail-list">${availability || '<li>No availability listed</li>'}</ul>
+      </div>
+    </div>
+  `;
+  openModal('Doctor Details', content);
 }
 
 function showFieldError(inputId, message) {
@@ -644,6 +708,9 @@ async function updateStats() {
     document.getElementById('totalPatients').textContent = patientsData.length || 0;
     document.getElementById('totalDoctors').textContent = doctorsData.length || 0;
     document.getElementById('totalAppointments').textContent = '0';
+    document.getElementById('patientsChange').textContent = 'Current records';
+    document.getElementById('doctorsChange').textContent = 'Current records';
+    document.getElementById('appointmentsChange').textContent = 'No appointments tracked';
     
     // Recent patients for dashboard
     const recentTbody = document.getElementById('recentPatients');
