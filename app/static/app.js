@@ -62,6 +62,70 @@ function toggleTheme() {
 
 themeToggle.addEventListener('click', toggleTheme);
 
+function createParticle(x, y) {
+  const particle = document.createElement('particle');
+  document.body.appendChild(particle);
+
+  const size = Math.floor(Math.random() * 20 + 22);
+  const destinationX = (Math.random() - 0.5) * 260;
+  const destinationY = (Math.random() - 0.5) * 260;
+  const rotation = Math.random() * 520;
+  const delay = Math.random() * 260;
+  const hue = Math.random() * 90 + 270;
+
+  particle.style.width = `${size}px`;
+  particle.style.height = `${size}px`;
+  particle.style.left = `${x}px`;
+  particle.style.top = `${y}px`;
+  particle.style.background = `hsl(${hue}, 78%, 62%)`;
+  particle.style.border = '1px solid rgba(255,255,255,0.9)';
+  particle.style.borderRadius = '3px';
+  particle.style.boxShadow = '0 0 10px rgba(255,255,255,0.2)';
+
+  const animation = particle.animate([
+    {
+      transform: 'translate(-50%, -50%) rotate(0deg) scale(1)',
+      opacity: 1,
+    },
+    {
+      transform: `translate(calc(-50% + ${destinationX}px), calc(-50% + ${destinationY}px)) rotate(${rotation}deg) scale(0)`,
+      opacity: 0,
+    },
+  ], {
+    duration: Math.random() * 1000 + 2200,
+    easing: 'cubic-bezier(0, .9, .57, 1)',
+    delay,
+  });
+
+  animation.onfinish = () => particle.remove();
+}
+
+function pop(e) {
+  if (e.clientX === 0 && e.clientY === 0) {
+    const bbox = e.target.getBoundingClientRect();
+    const x = bbox.left + bbox.width / 2;
+    const y = bbox.top + bbox.height / 2;
+    for (let i = 0; i < 28; i += 1) {
+      createParticle(x, y);
+    }
+    return;
+  }
+
+  const x = e.clientX;
+  const y = e.clientY + window.scrollY;
+
+  for (let i = 0; i < 28; i += 1) {
+    createParticle(x, y);
+  }
+}
+
+document.addEventListener('click', (event) => {
+  if (event.target.closest('.modal') || event.target.closest('.toast')) {
+    return;
+  }
+  pop(event);
+});
+
 // Navigation
 function navigateTo(view) {
   currentView = view;

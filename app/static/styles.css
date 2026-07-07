@@ -44,6 +44,19 @@ body {
   min-height: 100vh;
 }
 
+particle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-repeat: no-repeat;
+  background-size: contain;
+  will-change: transform, opacity;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
+}
+
 .app {
   display: flex;
   min-height: 100vh;
