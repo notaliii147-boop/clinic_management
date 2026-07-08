@@ -712,3 +712,291 @@ tr:hover td {
     padding: 20px;
   }
 }
+
+/* Particles Background */
+.particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particles-container .squares {
+  height: 100%;
+  display: flex;
+  justify-content: space-around;
+  overflow: hidden;
+}
+
+.particles-container .square {
+  animation: squares 9.5s linear infinite;
+  align-self: flex-end;
+  width: 1em;
+  height: 1em;
+  transform: translateY(100%);
+  border-radius: 4px;
+  will-change: transform;
+}
+
+/* LIGHT THEME - Bright Pink Particles */
+[data-theme="light"] .particles-container .square {
+  background: rgba(235, 25, 109, 0.25); /* Bright pink with higher opacity */
+  border: 1px solid rgba(235, 25, 109, 0.4);
+  box-shadow: 0 0 20px rgba(235, 25, 109, 0.1);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(2) {
+  background: rgba(235, 25, 109, 0.20);
+  border-color: rgba(235, 25, 109, 0.35);
+  filter: blur(3px);
+  box-shadow: 0 0 30px rgba(235, 25, 109, 0.08);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(3) {
+  background: rgba(235, 25, 109, 0.35);
+  border-color: rgba(235, 25, 109, 0.5);
+  filter: blur(1px);
+  box-shadow: 0 0 25px rgba(235, 25, 109, 0.15);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(4) {
+  background: rgba(235, 25, 109, 0.22);
+  border-color: rgba(235, 25, 109, 0.38);
+  filter: blur(2px);
+  box-shadow: 0 0 28px rgba(235, 25, 109, 0.12);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(5) {
+  background: rgba(235, 25, 109, 0.40);
+  border-color: rgba(235, 25, 109, 0.55);
+  filter: blur(1.5px);
+  box-shadow: 0 0 35px rgba(235, 25, 109, 0.18);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(6) {
+  background: rgba(235, 25, 109, 0.30);
+  border-color: rgba(235, 25, 109, 0.45);
+  filter: blur(0.5px);
+  box-shadow: 0 0 25px rgba(235, 25, 109, 0.14);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(7) {
+  background: rgba(235, 25, 109, 0.18);
+  border-color: rgba(235, 25, 109, 0.32);
+  filter: blur(2px);
+  box-shadow: 0 0 30px rgba(235, 25, 109, 0.10);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(8) {
+  background: rgba(235, 25, 109, 0.20);
+  border-color: rgba(235, 25, 109, 0.35);
+  filter: blur(4px);
+  box-shadow: 0 0 40px rgba(235, 25, 109, 0.08);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(9) {
+  background: rgba(235, 25, 109, 0.35);
+  border-color: rgba(235, 25, 109, 0.50);
+  filter: blur(0.5px);
+  box-shadow: 0 0 25px rgba(235, 25, 109, 0.16);
+}
+
+[data-theme="light"] .particles-container .square:nth-child(10) {
+  background: rgba(235, 25, 109, 0.28);
+  border-color: rgba(235, 25, 109, 0.42);
+  filter: blur(0.5px);
+  box-shadow: 0 0 30px rgba(235, 25, 109, 0.12);
+}
+
+/* DARK THEME - Bright Green Particles */
+[data-theme="dark"] .particles-container .square {
+  background: rgba(34, 197, 94, 0.25); /* Bright green with higher opacity */
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(2) {
+  background: rgba(34, 197, 94, 0.20);
+  border-color: rgba(34, 197, 94, 0.35);
+  filter: blur(3px);
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.08);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(3) {
+  background: rgba(34, 197, 94, 0.35);
+  border-color: rgba(34, 197, 94, 0.5);
+  filter: blur(1px);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(4) {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.38);
+  filter: blur(2px);
+  box-shadow: 0 0 28px rgba(34, 197, 94, 0.12);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(5) {
+  background: rgba(34, 197, 94, 0.40);
+  border-color: rgba(34, 197, 94, 0.55);
+  filter: blur(1.5px);
+  box-shadow: 0 0 35px rgba(34, 197, 94, 0.18);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(6) {
+  background: rgba(34, 197, 94, 0.30);
+  border-color: rgba(34, 197, 94, 0.45);
+  filter: blur(0.5px);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.14);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(7) {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.32);
+  filter: blur(2px);
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.10);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(8) {
+  background: rgba(34, 197, 94, 0.20);
+  border-color: rgba(34, 197, 94, 0.35);
+  filter: blur(4px);
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.08);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(9) {
+  background: rgba(34, 197, 94, 0.35);
+  border-color: rgba(34, 197, 94, 0.50);
+  filter: blur(0.5px);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.16);
+}
+
+[data-theme="dark"] .particles-container .square:nth-child(10) {
+  background: rgba(34, 197, 94, 0.28);
+  border-color: rgba(34, 197, 94, 0.42);
+  filter: blur(0.5px);
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.12);
+}
+
+/* Sizes and animation for all themes */
+.particles-container .square:nth-child(2) {
+  height: 1.5em;
+  width: 3em;
+  animation-delay: 1s;
+  animation-duration: 17s;
+}
+
+.particles-container .square:nth-child(3) {
+  height: 2em;
+  width: 1em;
+  animation-delay: 1.5s;
+  animation-duration: 8s;
+}
+
+.particles-container .square:nth-child(4) {
+  height: 1em;
+  width: 1.5em;
+  animation-delay: 0.5s;
+  animation-duration: 13s;
+}
+
+.particles-container .square:nth-child(5) {
+  height: 1.25em;
+  width: 2em;
+  animation-delay: 4s;
+  animation-duration: 11s;
+}
+
+.particles-container .square:nth-child(6) {
+  height: 2.5em;
+  width: 2em;
+  animation-delay: 2s;
+  animation-duration: 9s;
+}
+
+.particles-container .square:nth-child(7) {
+  height: 5em;
+  width: 2em;
+  animation-duration: 12s;
+}
+
+.particles-container .square:nth-child(8) {
+  height: 1em;
+  width: 3em;
+  animation-delay: 5s;
+  animation-duration: 18s;
+}
+
+.particles-container .square:nth-child(9) {
+  height: 1.5em;
+  width: 2em;
+  animation-duration: 9s;
+}
+
+.particles-container .square:nth-child(10) {
+  height: 3em;
+  width: 2.4em;
+  animation-delay: 6s;
+  animation-duration: 12s;
+}
+
+@keyframes squares {
+  from {
+    transform: translateY(100%) rotate(-50deg);
+  }
+  to {
+    transform: translateY(calc(-100vh + -100%)) rotate(20deg);
+  }
+}
+
+/* App and modals z-index */
+.app {
+  position: relative;
+  z-index: 1;
+}
+
+.modal-overlay {
+  z-index: 100;
+}
+
+.toast-container {
+  z-index: 200;
+}
+
+/* Ensure canvas stays on top but doesn't block interactions */
+canvas {
+  pointer-events: none !important;
+  z-index: 9999 !important;
+}
+
+/* Ensure all app content is below the reptile */
+.app {
+  position: relative;
+  z-index: 1;
+}
+
+/* Modal and toasts should be above the reptile */
+.modal-overlay {
+  z-index: 10000 !important;
+}
+
+.toast-container {
+  z-index: 10001 !important;
+}
+
+/* Make sure buttons and interactive elements work through the canvas */
+button, 
+input, 
+select, 
+textarea,
+.nav-item,
+.btn {
+  position: relative;
+  z-index: 2;
+}
