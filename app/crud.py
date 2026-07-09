@@ -113,7 +113,7 @@ def get_doctor(db: Session, doctor_id: str) -> Optional[Doctor]:
 
 
 def get_appointments(db: Session) -> List[Appointment]:
-    return db.query(Appointment).order_by(Appointment.appointment_date, Appointment.appointment_time).all()
+    return db.query(Appointment).order_by(Appointment.appointment_date, Appointment.appointment_start_time).all()
 
 
 def get_appointment(db: Session, appointment_id: str) -> Optional[Appointment]:
@@ -124,17 +124,18 @@ def is_doctor_available(
     db: Session,
     doctor_id: str,
     appointment_date: date,
-    appointment_time: time,
+    appointment_start_time: time,
+    appointment_end_time: time,
 ) -> bool:
-    # Check whether the requested time falls inside one of the doctor's availability slots.
+    # Check whether the requested range falls inside one of the doctor's availability slots.
     target_day = appointment_date.strftime("%A")
     return (
         db.query(DoctorAvailability)
         .filter(
             DoctorAvailability.doctor_id == doctor_id,
             DoctorAvailability.day == target_day,
-            DoctorAvailability.start_time <= appointment_time,
-            DoctorAvailability.end_time > appointment_time,
+            DoctorAvailability.start_time <= appointment_start_time,
+            DoctorAvailability.end_time >= appointment_end_time,
         )
         .count()
         > 0
@@ -145,13 +146,15 @@ def is_slot_booked(
     db: Session,
     doctor_id: str,
     appointment_date: date,
-    appointment_time: time,
+    appointment_start_time: time,
+    appointment_end_time: time,
     exclude_appointment_id: Optional[str] = None,
 ) -> bool:
     query = db.query(Appointment).filter(
         Appointment.doctor_id == doctor_id,
         Appointment.appointment_date == appointment_date,
-        Appointment.appointment_time == appointment_time,
+        Appointment.appointment_start_time < appointment_end_time,
+        Appointment.appointment_end_time > appointment_start_time,
     )
     if exclude_appointment_id:
         query = query.filter(Appointment.id != exclude_appointment_id)
@@ -205,25 +208,38 @@ def delete_doctor(db: Session, doctor: Doctor) -> None:
 
 def create_appointment(db: Session, appointment_data: models.AppointmentCreate) -> Appointment:
     appointment_date = parse_date(appointment_data.appointment_date)
-    appointment_time = parse_time(appointment_data.appointment_time)
+    appointment_start_time = parse_time(appointment_data.appointment_start_time)
+    appointment_end_time = parse_time(appointment_data.appointment_end_time)
 
-    if not is_doctor_available(db, appointment_data.doctor_id, appointment_date, appointment_time):
+    if not is_doctor_available(
+        db,
+        appointment_data.doctor_id,
+        appointment_date,
+        appointment_start_time,
+        appointment_end_time,
+    ):
         raise AppointmentAvailabilityError(
-            "Requested appointment time is outside the doctor's availability."
+            "Requested appointment time range is outside the doctor's availability."
         )
 
-    if is_slot_booked(db, appointment_data.doctor_id, appointment_date, appointment_time):
-        raise AppointmentConflictError("Requested appointment slot is already booked.")
+    if is_slot_booked(
+        db,
+        appointment_data.doctor_id,
+        appointment_date,
+        appointment_start_time,
+        appointment_end_time,
+    ):
+        raise AppointmentConflictError("Requested appointment slot range overlaps an existing appointment.")
 
     appointment_fields = {
         "patient_id": appointment_data.patient_id,
         "doctor_id": appointment_data.doctor_id,
         "appointment_date": appointment_date,
-        "appointment_time": appointment_time,
+        "appointment_start_time": appointment_start_time,
+        "appointment_end_time": appointment_end_time,
         "notes": appointment_data.notes,
     }
     if appointment_data.status is not None:
-        # Store the status as the enum's string value in the DB.
         appointment_fields["status"] = appointment_data.status.value
 
     appointment = Appointment(**appointment_fields)
@@ -235,37 +251,51 @@ def update_appointment(db: Session, appointment: Appointment, updates: models.Ap
     update_data = updates.model_dump(exclude_unset=True, exclude_none=True)
 
     appointment_date = appointment.appointment_date
-    appointment_time = appointment.appointment_time
+    appointment_start_time = appointment.appointment_start_time
+    appointment_end_time = appointment.appointment_end_time
     doctor_id = appointment.doctor_id
 
     if "appointment_date" in update_data:
         appointment_date = parse_date(update_data["appointment_date"])
         update_data["appointment_date"] = appointment_date
-    if "appointment_time" in update_data:
-        appointment_time = parse_time(update_data["appointment_time"])
-        update_data["appointment_time"] = appointment_time
+    if "appointment_start_time" in update_data:
+        appointment_start_time = parse_time(update_data["appointment_start_time"])
+        update_data["appointment_start_time"] = appointment_start_time
+    if "appointment_end_time" in update_data:
+        appointment_end_time = parse_time(update_data["appointment_end_time"])
+        update_data["appointment_end_time"] = appointment_end_time
     if "doctor_id" in update_data:
         doctor_id = update_data["doctor_id"]
     if "status" in update_data:
         update_data["status"] = update_data["status"].value
 
-    slot_is_changing = "doctor_id" in update_data or "appointment_date" in update_data or "appointment_time" in update_data
+    slot_is_changing = \
+        "doctor_id" in update_data or \
+        "appointment_date" in update_data or \
+        "appointment_start_time" in update_data or \
+        "appointment_end_time" in update_data
     if slot_is_changing:
-        if not is_doctor_available(db, doctor_id, appointment_date, appointment_time):
+        if not is_doctor_available(
+            db,
+            doctor_id,
+            appointment_date,
+            appointment_start_time,
+            appointment_end_time,
+        ):
             raise AppointmentAvailabilityError(
-                "Requested appointment time is outside the doctor's availability."
+                "Requested appointment time range is outside the doctor's availability."
             )
 
         if is_slot_booked(
             db,
             doctor_id,
             appointment_date,
-            appointment_time,
+            appointment_start_time,
+            appointment_end_time,
             exclude_appointment_id=appointment.id,
         ):
-            raise AppointmentConflictError("Requested appointment slot is already booked.")
+            raise AppointmentConflictError("Requested appointment slot range overlaps an existing appointment.")
 
-    # Only update the fields that were sent in the request.
     for field, value in update_data.items():
         setattr(appointment, field, value)
 

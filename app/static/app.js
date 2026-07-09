@@ -14,6 +14,7 @@ let currentView = "dashboard";
 let patients = [];
 let doctors = [];
 let appointments = [];
+let currentAppointmentFilter = "all";
 let editingPatientId = null;
 let editingDoctorId = null;
 let bookingPatientId = null;
@@ -23,6 +24,7 @@ const views = {
   dashboard: document.getElementById("view-dashboard"),
   patients: document.getElementById("view-patients"),
   doctors: document.getElementById("view-doctors"),
+  appointments: document.getElementById("view-appointments"),
 };
 
 const navItems = document.querySelectorAll(".nav-item");
@@ -172,13 +174,14 @@ function navigateTo(view) {
     dashboard: ["Dashboard", "Overview of your clinic"],
     patients: ["Patients", "Manage patient records"],
     doctors: ["Doctors", "Manage doctor profiles"],
+    appointments: ["Appointments", "Track past, today, and future appointments"],
   };
   const [title, subtitle] = titles[view] || ["", ""];
   pageTitle.textContent = title;
   pageSubtitle.textContent = subtitle;
 
   // Update add button
-  if (view === "dashboard") {
+  if (view === "dashboard" || view === "appointments") {
     addBtn.style.display = "none";
   } else {
     addBtn.style.display = "inline-flex";
@@ -191,6 +194,7 @@ navItems.forEach((item) => {
     navigateTo(item.dataset.view);
     if (item.dataset.view === "patients") fetchPatients();
     if (item.dataset.view === "doctors") fetchDoctors();
+    if (item.dataset.view === "appointments") fetchAppointments().then(() => renderAppointments());
   });
 });
 
@@ -396,12 +400,13 @@ async function showPatientAppointments(patientId) {
           const doctorDisplay = doctor
             ? `${escapeHtml(doctor.name)} (${escapeHtml(doctor.specialization)})`
             : escapeHtml(appointment.doctor_id);
+          const timeRange = `${escapeHtml(appointment.appointment_start_time)} - ${escapeHtml(appointment.appointment_end_time)}`;
           return `
           <tr>
             <td><code>${appointment.id.slice(0, 8)}</code></td>
             <td>${doctorDisplay}</td>
             <td>${formatDate(appointment.appointment_date)}</td>
-            <td>${escapeHtml(appointment.appointment_time)}</td>
+            <td>${timeRange}</td>
             <td>${escapeHtml(appointment.status)}</td>
             <td>${escapeHtml(appointment.notes || "-")}</td>
           </tr>
@@ -511,9 +516,156 @@ async function fetchDoctors() {
 async function fetchAppointments() {
   try {
     appointments = await apiFetch("/appointments");
+    renderAppointments();
   } catch (error) {
     appointments = [];
+    renderAppointments();
   }
+}
+
+function getFilteredAppointments() {
+  const today = getTodayLocalDate();
+  return appointments.filter((appointment) => {
+    if (!appointment) return false;
+    const appointmentDate = appointment.appointment_date;
+    if (currentAppointmentFilter === "past") {
+      return appointmentDate < today;
+    }
+    if (currentAppointmentFilter === "today") {
+      return appointmentDate === today;
+    }
+    if (currentAppointmentFilter === "future") {
+      return appointmentDate > today;
+    }
+    return true;
+  });
+}
+
+function renderAppointments() {
+  const tbody = document.getElementById("appointmentsTable");
+  const list = getFilteredAppointments();
+
+  if (!list || list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-state">
+          <div>📅</div>
+          <h3>No appointments found</h3>
+          <p>Select another tab or add a new appointment via a patient record.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = list
+    .map((appointment) => {
+      const patient = patients.find((p) => p.id === appointment.patient_id);
+      const doctor = doctors.find((d) => d.id === appointment.doctor_id);
+      const timeRange = appointment.appointment_start_time
+        ? `${escapeHtml(appointment.appointment_start_time)} - ${escapeHtml(appointment.appointment_end_time)}`
+        : escapeHtml(appointment.appointment_time || "");
+      return `
+        <tr>
+          <td><code>${appointment.id.slice(0, 8)}</code></td>
+          <td>${patient ? escapeHtml(patient.name) : escapeHtml(appointment.patient_id)}</td>
+          <td>${doctor ? escapeHtml(doctor.name) : escapeHtml(appointment.doctor_id)}</td>
+          <td>${formatDate(appointment.appointment_date)}</td>
+          <td>${timeRange}</td>
+          <td>${escapeHtml(appointment.status)}</td>
+          <td>${escapeHtml(appointment.notes || "-")}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function initAppointmentTabs() {
+  const tabButtons = document.querySelectorAll(".appointment-tab");
+  tabButtons.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabButtons.forEach((button) => button.classList.remove("active"));
+      tab.classList.add("active");
+      currentAppointmentFilter = tab.dataset.filter;
+      renderAppointments();
+    });
+  });
+}
+
+function lookupAppointmentBySearch(query) {
+  const trimmedQuery = query.trim().toLowerCase();
+  if (!trimmedQuery) {
+    renderAppointments();
+    return;
+  }
+
+  const listToSearch = getFilteredAppointments();
+  const filtered = listToSearch.filter((appointment) => {
+    const patient = patients.find((p) => p.id === appointment.patient_id);
+    const doctor = doctors.find((d) => d.id === appointment.doctor_id);
+    const timeRange = appointment.appointment_start_time && appointment.appointment_end_time
+      ? `${appointment.appointment_start_time} - ${appointment.appointment_end_time}`
+      : appointment.appointment_time || "";
+    const text = `${appointment.id} ${patient?.name || ""} ${doctor?.name || ""} ${appointment.appointment_date} ${timeRange} ${appointment.status}`.toLowerCase();
+    return text.includes(trimmedQuery);
+  });
+
+  const tbody = document.getElementById("appointmentsTable");
+  if (!tbody) return;
+  if (!filtered.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-state">
+          <div>🔎</div>
+          <h3>No appointments matched</h3>
+          <p>Try another search term.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered
+    .map((appointment) => {
+      const patient = patients.find((p) => p.id === appointment.patient_id);
+      const doctor = doctors.find((d) => d.id === appointment.doctor_id);
+      const timeRange = appointment.appointment_start_time && appointment.appointment_end_time
+        ? `${escapeHtml(appointment.appointment_start_time)} - ${escapeHtml(appointment.appointment_end_time)}`
+        : escapeHtml(appointment.appointment_time || "");
+      return `
+        <tr>
+          <td><code>${appointment.id.slice(0, 8)}</code></td>
+          <td>${patient ? escapeHtml(patient.name) : escapeHtml(appointment.patient_id)}</td>
+          <td>${doctor ? escapeHtml(doctor.name) : escapeHtml(appointment.doctor_id)}</td>
+          <td>${formatDate(appointment.appointment_date)}</td>
+          <td>${timeRange}</td>
+          <td>${escapeHtml(appointment.status)}</td>
+          <td>${escapeHtml(appointment.notes || "-")}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function formatAppointmentTimeRange(start, end) {
+  const pad = (num) => String(num).padStart(2, "0");
+  if (!start || !end) return "";
+  return `${start} - ${end}`;
+}
+
+function createTimeRangeInput(labelText, startId, endId, startValue = "09:00", endValue = "10:00") {
+  return `
+    <div class="form-row">
+      <div class="form-group">
+        <label>${labelText} Start</label>
+        <input type="time" id="${startId}" value="${startValue}" required />
+      </div>
+      <div class="form-group">
+        <label>${labelText} End</label>
+        <input type="time" id="${endId}" value="${endValue}" required />
+      </div>
+    </div>
+  `;
 }
 
 function renderDoctors(data = null) {
@@ -722,7 +874,8 @@ function validateBookingForm() {
   const errors = [];
   const doctorId = document.getElementById("bookingDoctor")?.value;
   const date = document.getElementById("bookingDate")?.value;
-  const time = document.getElementById("bookingTime")?.value;
+  const fromTime = document.getElementById("bookingFromTime")?.value;
+  const toTime = document.getElementById("bookingToTime")?.value;
 
   if (!doctorId) {
     errors.push({ field: "bookingDoctor", message: "Please select a doctor." });
@@ -735,8 +888,14 @@ function validateBookingForm() {
       errors.push({ field: "bookingDate", message: "Appointment date cannot be in the past." });
     }
   }
-  if (!time) {
-    errors.push({ field: "bookingTime", message: "Please select a time." });
+  if (!fromTime) {
+    errors.push({ field: "bookingFromTime", message: "Please select a start time." });
+  }
+  if (!toTime) {
+    errors.push({ field: "bookingToTime", message: "Please select an end time." });
+  }
+  if (fromTime && toTime && fromTime >= toTime) {
+    errors.push({ field: "bookingToTime", message: "End time must be after start time." });
   }
 
   return errors;
@@ -894,8 +1053,12 @@ function getBookingForm(doctorOptions = [], selectedDoctorId = "") {
           <input type="date" id="bookingDate" required min="${getTodayLocalDate()}" />
         </div>
         <div class="form-group">
-          <label>Time</label>
-          <input type="time" id="bookingTime" required />
+          <label>From</label>
+          <input type="time" id="bookingFromTime" value="09:00" required />
+        </div>
+        <div class="form-group">
+          <label>To</label>
+          <input type="time" id="bookingToTime" value="10:00" required />
         </div>
       </div>
       <div class="form-group">
@@ -1044,7 +1207,8 @@ document.addEventListener("submit", async (e) => {
       patient_id: bookingPatientId,
       doctor_id: document.getElementById("bookingDoctor").value,
       appointment_date: document.getElementById("bookingDate").value,
-      appointment_time: document.getElementById("bookingTime").value,
+      appointment_start_time: document.getElementById("bookingFromTime").value,
+      appointment_end_time: document.getElementById("bookingToTime").value,
       notes: document.getElementById("bookingNotes").value,
     };
 
@@ -1196,6 +1360,17 @@ document.getElementById("doctorSearchBtn")?.addEventListener("click", () => {
   lookupDoctorById(document.getElementById("doctorSearch").value);
 });
 
+document.getElementById("appointmentSearch")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    lookupAppointmentBySearch(e.target.value);
+  }
+});
+
+document.getElementById("appointmentSearch")?.addEventListener("input", (e) => {
+  lookupAppointmentBySearch(e.target.value);
+});
+
 // Add button
 addBtn.addEventListener("click", () => {
   if (currentView === "patients") {
@@ -1213,6 +1388,7 @@ navigateTo("dashboard");
 updateStats();
 fetchPatients();
 fetchDoctors();
+initAppointmentTabs();
 
 // Auto-refresh every 30 seconds
 setInterval(() => {

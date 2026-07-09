@@ -20,10 +20,32 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    op.add_column('appointments', sa.Column('appointment_start_time', sa.Time(), nullable=True))
+    op.add_column('appointments', sa.Column('appointment_end_time', sa.Time(), nullable=True))
+
+    conn = op.get_bind()
+    conn.execute(sa.text(
+        "UPDATE appointments SET appointment_start_time = appointment_time, appointment_end_time = appointment_time WHERE appointment_time IS NOT NULL"
+    ))
+
+    op.alter_column(
+        'appointments',
+        'appointment_start_time',
+        existing_type=sa.Time(),
+        nullable=False,
+    )
+    op.alter_column(
+        'appointments',
+        'appointment_end_time',
+        existing_type=sa.Time(),
+        nullable=False,
+    )
+    op.drop_column('appointments', 'appointment_time')
+
     op.create_unique_constraint(
         'uq_doctor_appointment_slot',
         'appointments',
-        ['doctor_id', 'appointment_date', 'appointment_time']
+        ['doctor_id', 'appointment_date', 'appointment_start_time']
     )
 
 
@@ -34,3 +56,12 @@ def downgrade() -> None:
         'appointments',
         type_='unique'
     )
+    op.add_column('appointments', sa.Column('appointment_time', sa.Time(), nullable=True))
+
+    conn = op.get_bind()
+    conn.execute(sa.text(
+        "UPDATE appointments SET appointment_time = appointment_start_time WHERE appointment_start_time IS NOT NULL"
+    ))
+
+    op.drop_column('appointments', 'appointment_end_time')
+    op.drop_column('appointments', 'appointment_start_time')

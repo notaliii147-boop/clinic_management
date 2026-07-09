@@ -203,22 +203,52 @@ class AppointmentCreate(BaseModelMixin):
     patient_id: str = Field(..., example="d313f43d-09da-491e-b234-cfa7a2836efa")
     doctor_id: str = Field(..., example="c83d4d6f-ea13-4fad-9b08-b55a1d4cf8d4")
     appointment_date: str = Field(..., example="2026-07-15", description="Format: YYYY-MM-DD")
-    appointment_time: str = Field(
-        ..., pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="14:30"
+    appointment_start_time: str = Field(
+        ..., pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="09:00"
+    )
+    appointment_end_time: str = Field(
+        ..., pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="10:00"
     )
     status: Optional[AppointmentStatus] = Field(None, example="Scheduled")
     notes: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("appointment_end_time")
+    @classmethod
+    def validate_end_time_after_start(cls, value, info):
+        start_time = info.data.get("appointment_start_time")
+        if start_time and value:
+            start_obj = datetime.strptime(start_time, "%H:%M").time()
+            end_obj = datetime.strptime(value, "%H:%M").time()
+            if start_obj >= end_obj:
+                raise ValueError("End time must be after start time")
+        return value
 
 
 class AppointmentUpdate(BaseModelMixin):
     patient_id: Optional[str] = Field(None, example="d313f43d-09da-491e-b234-cfa7a2836efa")
     doctor_id: Optional[str] = Field(None, example="c83d4d6f-ea13-4fad-9b08-b55a1d4cf8d4")
     appointment_date: Optional[str] = Field(None, example="2026-07-15", description="Format: YYYY-MM-DD")
-    appointment_time: Optional[str] = Field(
-        None, pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="14:30"
+    appointment_start_time: Optional[str] = Field(
+        None, pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="09:00"
+    )
+    appointment_end_time: Optional[str] = Field(
+        None, pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="10:00"
     )
     status: Optional[AppointmentStatus] = Field(None, example="Completed")
     notes: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("appointment_end_time")
+    @classmethod
+    def validate_end_time_after_start(cls, value, info):
+        if value is None:
+            return value
+        start_time = info.data.get("appointment_start_time")
+        if start_time and value:
+            start_obj = datetime.strptime(start_time, "%H:%M").time()
+            end_obj = datetime.strptime(value, "%H:%M").time()
+            if start_obj >= end_obj:
+                raise ValueError("End time must be after start time")
+        return value
 
 
 class AppointmentResponse(BaseModel):
@@ -226,7 +256,8 @@ class AppointmentResponse(BaseModel):
     patient_id: str
     doctor_id: str
     appointment_date: date
-    appointment_time: time
+    appointment_start_time: time
+    appointment_end_time: time
     status: AppointmentStatus
     notes: Optional[str]
     created_at: datetime
@@ -238,7 +269,10 @@ class AppointmentResponse(BaseModel):
     def serialize_appointment_date(self, value: date) -> str:
         return value.isoformat()
 
-    @field_serializer("appointment_time")
-    def serialize_appointment_time(self, value: time) -> str:
-        # Convert Python time objects into HH:MM strings for API responses.
+    @field_serializer("appointment_start_time")
+    def serialize_appointment_start_time(self, value: time) -> str:
+        return value.strftime("%H:%M")
+
+    @field_serializer("appointment_end_time")
+    def serialize_appointment_end_time(self, value: time) -> str:
         return value.strftime("%H:%M")

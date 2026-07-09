@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 import uuid
 
 from sqlalchemy import (
@@ -111,7 +111,7 @@ class Appointment(Base):
         UniqueConstraint(
             "doctor_id",
             "appointment_date",
-            "appointment_time",
+            "appointment_start_time",
             name="uq_doctor_appointment_slot",
         ),
     )
@@ -120,7 +120,8 @@ class Appointment(Base):
     patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
     doctor_id = Column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False)
     appointment_date = Column(Date, nullable=False)
-    appointment_time = Column(Time, nullable=False)
+    appointment_start_time = Column(Time, nullable=False)
+    appointment_end_time = Column(Time, nullable=False)
     status = Column(
         Enum("Scheduled", "Completed", "Cancelled", "No-Show", name="appointmentstatus"),
         nullable=False,
