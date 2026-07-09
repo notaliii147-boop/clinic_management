@@ -118,11 +118,13 @@ class Availability(BaseModel):
     @field_validator("end_time")
     @classmethod
     def validate_end_time_after_start(cls, value, info):
-        # Ensure availability end time is strictly after the start time.
         if "start_time" in info.data:
-            start_time = info.data["start_time"]
-            if start_time and value and start_time >= value:
-                raise ValueError("End time must be after start time")
+            start_time_str = info.data["start_time"]
+            if start_time_str and value:
+                start_time_obj = datetime.strptime(start_time_str, "%H:%M").time()
+                end_time_obj = datetime.strptime(value, "%H:%M").time()
+                if start_time_obj >= end_time_obj:
+                    raise ValueError("End time must be after start time")
         return value
 
 
