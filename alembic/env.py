@@ -7,7 +7,7 @@ import sys
 import os
 
 # Add the project root to Python path so Alembic can import application modules.
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 # Import your models
 from database import Base
