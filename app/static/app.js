@@ -46,6 +46,14 @@ function formatDate(value) {
   return `${year}-${month}-${day}`;
 }
 
+function getTodayLocalDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -722,7 +730,7 @@ function validateBookingForm() {
   if (!date) {
     errors.push({ field: "bookingDate", message: "Please select a date." });
   } else {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocalDate();
     if (date < today) {
       errors.push({ field: "bookingDate", message: "Appointment date cannot be in the past." });
     }
@@ -883,7 +891,7 @@ function getBookingForm(doctorOptions = [], selectedDoctorId = "") {
       <div class="form-row">
         <div class="form-group">
           <label>Date</label>
-          <input type="date" id="bookingDate" required min="${new Date().toISOString().split('T')[0]}" />
+          <input type="date" id="bookingDate" required min="${getTodayLocalDate()}" />
         </div>
         <div class="form-group">
           <label>Time</label>
@@ -944,7 +952,6 @@ async function bookAppointment(data) {
   });
   showToast("Appointment booked successfully!");
   closeModal();
-  await fetchAppointments();
   await updateStats();
   return result;
 }

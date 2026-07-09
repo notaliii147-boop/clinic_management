@@ -14,7 +14,7 @@ class DatabaseConfig:
 
         if not self.MYSQL_USER:
             raise ValueError("MYSQL_USER environment variable is required")
-        if self.MYSQL_PASSWORD is None:
+        if not self.MYSQL_PASSWORD:
             raise ValueError("MYSQL_PASSWORD environment variable is required")
 
     @property
