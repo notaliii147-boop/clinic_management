@@ -46,6 +46,14 @@ function formatDate(value) {
   return `${year}-${month}-${day}`;
 }
 
+function getTodayLocalDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -721,6 +729,11 @@ function validateBookingForm() {
   }
   if (!date) {
     errors.push({ field: "bookingDate", message: "Please select a date." });
+  } else {
+    const today = getTodayLocalDate();
+    if (date < today) {
+      errors.push({ field: "bookingDate", message: "Appointment date cannot be in the past." });
+    }
   }
   if (!time) {
     errors.push({ field: "bookingTime", message: "Please select a time." });
@@ -878,7 +891,7 @@ function getBookingForm(doctorOptions = [], selectedDoctorId = "") {
       <div class="form-row">
         <div class="form-group">
           <label>Date</label>
-          <input type="date" id="bookingDate" required />
+          <input type="date" id="bookingDate" required min="${getTodayLocalDate()}" />
         </div>
         <div class="form-group">
           <label>Time</label>
@@ -939,8 +952,7 @@ async function bookAppointment(data) {
   });
   showToast("Appointment booked successfully!");
   closeModal();
-  fetchAppointments();
-  updateStats();
+  await updateStats();
   return result;
 }
 
@@ -1047,20 +1059,16 @@ document.addEventListener("submit", async (e) => {
 // Stats
 async function updateStats() {
   try {
-    const [patientsRes, doctorsRes, appointmentsRes] = await Promise.all([
+    const [patientsRes, doctorsRes] = await Promise.all([
       fetch(`${API_BASE}/patients`),
       fetch(`${API_BASE}/doctors`),
-      fetch(`${API_BASE}/appointments`),
+      fetchAppointments(),
     ]);
 
     const patientsData = patientsRes.ok ? await patientsRes.json() : [];
     const doctorsData = doctorsRes.ok ? await doctorsRes.json() : [];
-    const appointmentsData = appointmentsRes.ok
-      ? await appointmentsRes.json()
-      : [];
 
-    appointments = appointmentsData;
-    const activeAppointments = appointmentsData.filter(
+    const activeAppointments = appointments.filter(
       (appointment) => appointment.status === "Scheduled",
     );
 
@@ -1083,7 +1091,7 @@ async function updateStats() {
     if (recent.length === 0) {
       recentTbody.innerHTML = `
         <tr>
-          <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 24px;">
+          <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 24px;">
             No patients yet
           </td>
         </tr>

@@ -21,7 +21,7 @@ fileConfig(config.config_file_name)
 
 # Set the SQLAlchemy URL from config so Alembic uses the same database as the app.
 # This keeps migration operations aligned with application DB configuration.
-config.set_main_option('sqlalchemy.url', db_config.DATABASE_URL)
+config.set_main_option('sqlalchemy.url', db_config.DATABASE_URL.replace('%', '%%'))
 
 # Add your model's MetaData object here for 'autogenerate' support.
 target_metadata = Base.metadata
