@@ -30,8 +30,8 @@ def upgrade() -> None:
         sa.Column('phone', sa.String(length=20), nullable=False),
         sa.Column('email', sa.String(length=100), nullable=False),
         sa.Column('address', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         'doctors',
@@ -41,8 +41,8 @@ def upgrade() -> None:
         sa.Column('phone', sa.String(length=20), nullable=False),
         sa.Column('email', sa.String(length=100), nullable=False),
         sa.Column('experience_years', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_table(
         'doctor_availability',
@@ -61,8 +61,8 @@ def upgrade() -> None:
         sa.Column('appointment_time', sa.Time(), nullable=False),
         sa.Column('status', sa.Enum('Scheduled', 'Completed', 'Cancelled', 'No-Show', name='appointmentstatus'), nullable=False, server_default='Scheduled'),
         sa.Column('notes', sa.Text(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
 
 
