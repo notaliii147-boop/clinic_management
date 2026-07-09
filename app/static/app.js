@@ -653,7 +653,7 @@ function formatAppointmentTimeRange(start, end) {
   return `${start} - ${end}`;
 }
 
-function createTimeRangeInput(labelText, startId, endId, startValue = "09:00", endValue = "10:00") {
+function createTimeRangeInput(labelText, startId, endId, startValue = "00:00", endValue = "23:59") {
   return `
     <div class="form-row">
       <div class="form-group">
@@ -972,11 +972,11 @@ function getDoctorForm(data = {}) {
               </div>
               <div class="form-group">
                 <label>Start</label>
-                <input type="time" class="av_start" value="09:00" />
+                <input type="time" class="av_start" value="00:00" />
               </div>
               <div class="form-group">
                 <label>End</label>
-                <input type="time" class="av_end" value="17:00" />
+                <input type="time" class="av_end" value="23:59" />
               </div>
               <div class="form-group" style="display: flex; align-items: end;">
                 <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.form-row').remove()">✕</button>
@@ -1011,11 +1011,11 @@ function addAvailabilityRow() {
     </div>
     <div class="form-group">
       <label>Start</label>
-      <input type="time" class="av_start" value="09:00" />
+      <input type="time" class="av_start" value="00:00" />
     </div>
     <div class="form-group">
       <label>End</label>
-      <input type="time" class="av_end" value="17:00" />
+      <input type="time" class="av_end" value="23:59" />
     </div>
     <div class="form-group" style="display: flex; align-items: end;">
       <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.form-row').remove()">✕</button>
@@ -1231,9 +1231,12 @@ async function updateStats() {
 
     const patientsData = patientsRes.ok ? await patientsRes.json() : [];
     const doctorsData = doctorsRes.ok ? await doctorsRes.json() : [];
+    const today = getTodayLocalDate();
 
     const activeAppointments = appointments.filter(
-      (appointment) => appointment.status === "Scheduled",
+      (appointment) =>
+        appointment.status === "Scheduled" &&
+        appointment.appointment_date === today,
     );
 
     document.getElementById("totalPatients").textContent =
