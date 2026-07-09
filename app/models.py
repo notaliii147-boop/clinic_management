@@ -47,6 +47,17 @@ class BaseModelMixin(BaseModel):
         except ValueError:
             raise ValueError("Date must be in YYYY-MM-DD format (e.g., 1990-06-15)")
 
+    @field_validator("appointment_date", mode="before", check_fields=False)
+    @classmethod
+    def validate_appointment_date(cls, value):
+        if value is None:
+            return value
+        try:
+            datetime.strptime(value, "%Y-%m-%d")
+            return value
+        except ValueError:
+            raise ValueError("Date must be in YYYY-MM-DD format (e.g., 2026-07-15)")
+
     @field_validator("email", check_fields=False)
     @classmethod
     def validate_email(cls, value):
@@ -188,7 +199,7 @@ class AppointmentStatus(str, Enum):
     NO_SHOW = "No-Show"
 
 
-class AppointmentCreate(BaseModel):
+class AppointmentCreate(BaseModelMixin):
     patient_id: str = Field(..., example="d313f43d-09da-491e-b234-cfa7a2836efa")
     doctor_id: str = Field(..., example="c83d4d6f-ea13-4fad-9b08-b55a1d4cf8d4")
     appointment_date: str = Field(..., example="2026-07-15", description="Format: YYYY-MM-DD")
@@ -198,19 +209,8 @@ class AppointmentCreate(BaseModel):
     status: Optional[AppointmentStatus] = Field(None, example="Scheduled")
     notes: Optional[str] = Field(None, max_length=500)
 
-    @field_validator("appointment_date", mode="before")
-    @classmethod
-    def validate_appointment_date(cls, value):
-        if value is None:
-            return value
-        try:
-            datetime.strptime(value, "%Y-%m-%d")
-            return value
-        except ValueError:
-            raise ValueError("Date must be in YYYY-MM-DD format (e.g., 2026-07-15)")
 
-
-class AppointmentUpdate(BaseModel):
+class AppointmentUpdate(BaseModelMixin):
     patient_id: Optional[str] = Field(None, example="d313f43d-09da-491e-b234-cfa7a2836efa")
     doctor_id: Optional[str] = Field(None, example="c83d4d6f-ea13-4fad-9b08-b55a1d4cf8d4")
     appointment_date: Optional[str] = Field(None, example="2026-07-15", description="Format: YYYY-MM-DD")
@@ -219,17 +219,6 @@ class AppointmentUpdate(BaseModel):
     )
     status: Optional[AppointmentStatus] = Field(None, example="Completed")
     notes: Optional[str] = Field(None, max_length=500)
-
-    @field_validator("appointment_date", mode="before")
-    @classmethod
-    def validate_appointment_date(cls, value):
-        if value is None:
-            return value
-        try:
-            datetime.strptime(value, "%Y-%m-%d")
-            return value
-        except ValueError:
-            raise ValueError("Date must be in YYYY-MM-DD format (e.g., 2026-07-15)")
 
 
 class AppointmentResponse(BaseModel):

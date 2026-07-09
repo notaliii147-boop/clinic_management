@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
 from . import crud, models
@@ -104,8 +105,10 @@ def create_appointment(appointment: models.AppointmentCreate, db: Session = Depe
 
     try:
         return crud.create_appointment(db, appointment)
-    except AppointmentBookingError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except AppointmentBookingError as booking_exc:
+        raise HTTPException(status_code=409, detail=str(booking_exc)) from booking_exc
+    except exc.IntegrityError as integrity_exc:
+        raise HTTPException(status_code=409, detail="Appointment creation failed due to concurrent modification") from integrity_exc
 
 
 @router.put("/appointments/{appointment_id}", response_model=models.AppointmentResponse)

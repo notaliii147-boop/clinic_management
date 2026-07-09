@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import date, datetime, time
 from typing import List, Optional
 
 from sqlalchemy import exc
@@ -23,7 +23,7 @@ class AppointmentAvailabilityError(AppointmentBookingError):
     pass
 
 
-def parse_date(date_string: str) -> datetime.date:
+def parse_date(date_string: str) -> date:
     # Convert incoming ISO date strings to Python date objects for SQLAlchemy.
     return datetime.strptime(date_string, "%Y-%m-%d").date()
 
@@ -123,7 +123,7 @@ def get_appointment(db: Session, appointment_id: str) -> Optional[Appointment]:
 def is_doctor_available(
     db: Session,
     doctor_id: str,
-    appointment_date: datetime.date,
+    appointment_date: date,
     appointment_time: time,
 ) -> bool:
     # Check whether the requested time falls inside one of the doctor's availability slots.
@@ -144,7 +144,7 @@ def is_doctor_available(
 def is_slot_booked(
     db: Session,
     doctor_id: str,
-    appointment_date: datetime.date,
+    appointment_date: date,
     appointment_time: time,
     exclude_appointment_id: Optional[str] = None,
 ) -> bool:
@@ -186,9 +186,9 @@ def create_doctor(db: Session, doctor_data: models.DoctorCreate) -> Doctor:
 def update_doctor(db: Session, doctor: Doctor, updates: models.DoctorUpdate) -> Doctor:
     update_data = updates.model_dump(exclude_unset=True, exclude_none=True)
     if "availability" in update_data:
-        # Replace existing availability slots atomically rather than patching individual rows.
+        update_data.pop("availability")
         doctor.availability.clear()
-        new_availability = _build_availability_slots(update_data.pop("availability"))
+        new_availability = _build_availability_slots(updates.availability)
         doctor.availability.extend(new_availability)
 
     for field, value in update_data.items():
@@ -246,22 +246,24 @@ def update_appointment(db: Session, appointment: Appointment, updates: models.Ap
         update_data["appointment_time"] = appointment_time
     if "doctor_id" in update_data:
         doctor_id = update_data["doctor_id"]
-    if "status" in update_data and update_data["status"] is not None:
+    if "status" in update_data:
         update_data["status"] = update_data["status"].value
 
-    if not is_doctor_available(db, doctor_id, appointment_date, appointment_time):
-        raise AppointmentAvailabilityError(
-            "Requested appointment time is outside the doctor's availability."
-        )
+    slot_is_changing = "doctor_id" in update_data or "appointment_date" in update_data or "appointment_time" in update_data
+    if slot_is_changing:
+        if not is_doctor_available(db, doctor_id, appointment_date, appointment_time):
+            raise AppointmentAvailabilityError(
+                "Requested appointment time is outside the doctor's availability."
+            )
 
-    if is_slot_booked(
-        db,
-        doctor_id,
-        appointment_date,
-        appointment_time,
-        exclude_appointment_id=appointment.id,
-    ):
-        raise AppointmentConflictError("Requested appointment slot is already booked.")
+        if is_slot_booked(
+            db,
+            doctor_id,
+            appointment_date,
+            appointment_time,
+            exclude_appointment_id=appointment.id,
+        ):
+            raise AppointmentConflictError("Requested appointment slot is already booked.")
 
     # Only update the fields that were sent in the request.
     for field, value in update_data.items():

@@ -63,6 +63,7 @@ def upgrade() -> None:
         sa.Column('notes', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.UniqueConstraint('doctor_id', 'appointment_date', 'appointment_time', name='uq_doctor_appointment_slot'),
     )
 
 
