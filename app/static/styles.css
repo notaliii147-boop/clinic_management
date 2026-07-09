@@ -347,6 +347,57 @@ tr:hover td {
   margin-bottom: 16px;
 }
 
+.appointments-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.appointment-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-height: 280px;
+}
+
+.appointment-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 14px;
+}
+
+.appointment-tab:hover,
+.appointment-tab.active {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.appointments-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appointments-header h3 {
+  margin-bottom: 4px;
+}
+
+.appointments-header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
 .search-box {
   flex: 1;
   max-width: 320px;

@@ -53,6 +53,10 @@
             <span class="nav-icon"><i class="fa-solid fa-user-doctor"></i></span>
             <span>Doctors</span>
           </button>
+          <button class="nav-item" data-view="appointments">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-days"></i></span>
+            <span>Appointments</span>
+          </button>
         </nav>
       </aside>
 
@@ -98,6 +102,7 @@
                     <th>Phone</th>
                     <th>Email</th>
                     <th>Added</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="recentPatients"></tbody>
@@ -158,6 +163,46 @@
             </table>
           </div>
         </section>
+
+        <!-- Appointments View -->
+        <section id="view-appointments" class="view">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <input type="text" id="appointmentSearch" aria-label="Search appointments" placeholder="Search appointments..." />
+            </div>
+            <div class="toolbar-actions"></div>
+          </div>
+          <div class="appointments-layout">
+            <aside class="appointment-tabs" id="appointmentTabs">
+              <button class="appointment-tab active" data-filter="all">All Appointments</button>
+              <button class="appointment-tab" data-filter="past">Past Appointments</button>
+              <button class="appointment-tab" data-filter="today">Today's Appointments</button>
+              <button class="appointment-tab" data-filter="future">Future Appointments</button>
+            </aside>
+            <div class="appointments-content">
+              <div class="appointments-header">
+                <h3>Appointments</h3>
+                <p>Track past, today and future appointments in one place.</p>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Patient</th>
+                      <th>Doctor</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Status</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="appointmentsTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
 
@@ -178,6 +223,6 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="/static/app.js"></script>
-    <script src="/static/reptile.js"></script>
+    <!-- <script src="/static/reptile.js"></script> -->
   </body>
 </html>

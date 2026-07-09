@@ -1,12 +1,9 @@
-import json, os, re, uuid
-from datetime import datetime, timezone
+import re
+from datetime import date, datetime, time
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator
-
-PATIENTS_FILE = "patients.json"
-DOCTORS_FILE = "doctors.json"
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 
 class Gender(str, Enum):
@@ -33,49 +30,57 @@ class DayOfWeek(str, Enum):
     THURSDAY = "Thursday"
     FRIDAY = "Friday"
     SATURDAY = "Saturday"
-    SUNDAY = "Sunday"    
+    SUNDAY = "Sunday"
 
 
 class BaseModelMixin(BaseModel):
-    @field_validator("dob", check_fields=False)
+    # Shared validators used by multiple request/response models.
+    # This centralizes rules for fields like DOB, email, and phone formatting.
+    @field_validator("dob", mode="before", check_fields=False)
     @classmethod
-    def validate_dob_format(cls, v):
-        if v is None:
-            return v
+    def validate_dob_format(cls, value):
+        if value is None:
+            return value
         try:
-            datetime.strptime(v, "%Y-%m-%d")
-            return v
+            datetime.strptime(value, "%Y-%m-%d")
+            return value
         except ValueError:
             raise ValueError("Date must be in YYYY-MM-DD format (e.g., 1990-06-15)")
 
+    @field_validator("appointment_date", mode="before", check_fields=False)
+    @classmethod
+    def validate_appointment_date(cls, value):
+        if value is None:
+            return value
+        try:
+            datetime.strptime(value, "%Y-%m-%d")
+            return value
+        except ValueError:
+            raise ValueError("Date must be in YYYY-MM-DD format (e.g., 2026-07-15)")
+
     @field_validator("email", check_fields=False)
     @classmethod
-    def validate_email(cls, v):
-        if v is None:
-            return v
-        # Basic email validation
-        if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", v):
+    def validate_email(cls, value):
+        if value is None:
+            return value
+        if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value):
             raise ValueError("Invalid email format. Example: name@domain.com")
-        return v
+        return value
 
     @field_validator("phone", check_fields=False)
     @classmethod
-    def validate_phone(cls, v):
-        if v is None:
-            return v
-        cleaned = v.replace(" ", "").replace("-", "")
-        
+    def validate_phone(cls, value):
+        if value is None:
+            return value
+        cleaned = value.replace(" ", "").replace("-", "")
         if not cleaned.startswith("+92"):
             raise ValueError("Phone number must start with +92 (Pakistani format)")
-        
         number_part = cleaned[3:]
         if not number_part.isdigit():
             raise ValueError("Phone number must contain only digits after +92")
-        
         if len(number_part) != 10:
             raise ValueError("Phone number must have exactly 10 digits after +92")
-            
-        return v
+        return value
 
 
 class PatientCreate(BaseModelMixin):
@@ -98,33 +103,40 @@ class PatientUpdate(BaseModelMixin):
     address: Optional[str] = Field(None, min_length=5, max_length=200, example="456 Park Avenue, Lahore")
 
 
-class PatientResponse(BaseModel):
-    id: str
-    name: str
-    gender: str
-    dob: str
-    blood_group: str
-    phone: str
-    email: str
-    address: str
-    created_at: str
-    updated_at: str
-
-
 class Availability(BaseModel):
     day: DayOfWeek
     start_time: str = Field(..., pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="09:00")
     end_time: str = Field(..., pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="17:00")
-    
+
+    # Allow creating this model from ORM attributes or dictionaries interchangeably.
+    model_config = {"from_attributes": True}
+
+    @field_validator("start_time", mode="before")
+    @classmethod
+    def parse_start_time(cls, value):
+        # Convert SQLAlchemy time objects to string format during validation.
+        if isinstance(value, time):
+            return value.strftime("%H:%M")
+        return value
+
+    @field_validator("end_time", mode="before")
+    @classmethod
+    def parse_end_time(cls, value):
+        if isinstance(value, time):
+            return value.strftime("%H:%M")
+        return value
+
     @field_validator("end_time")
     @classmethod
-    def validate_end_time_after_start(cls, v, info):
+    def validate_end_time_after_start(cls, value, info):
         if "start_time" in info.data:
-            start = info.data["start_time"]
-            if start and v:
-                if start >= v:
+            start_time_str = info.data["start_time"]
+            if start_time_str and value:
+                start_time_obj = datetime.strptime(start_time_str, "%H:%M").time()
+                end_time_obj = datetime.strptime(value, "%H:%M").time()
+                if start_time_obj >= end_time_obj:
                     raise ValueError("End time must be after start time")
-        return v
+        return value
 
 
 class DoctorCreate(BaseModelMixin):
@@ -133,7 +145,7 @@ class DoctorCreate(BaseModelMixin):
     phone: str = Field(..., example="+92 300 9876543")
     email: str = Field(..., example="sarah@hospital.com")
     experience_years: int = Field(..., ge=0, le=60, example=10)
-    availability: list[Availability] = Field(..., min_length=1)
+    availability: List[Availability] = Field(..., min_length=1)
 
 
 class DoctorUpdate(BaseModelMixin):
@@ -142,7 +154,28 @@ class DoctorUpdate(BaseModelMixin):
     phone: Optional[str] = Field(None, example="+92 300 5555555")
     email: Optional[str] = Field(None, example="ahmed@hospital.com")
     experience_years: Optional[int] = Field(None, ge=0, le=60, example=15)
-    availability: Optional[list[Availability]] = Field(None)
+    availability: Optional[List[Availability]] = None
+
+
+class PatientResponse(BaseModel):
+    id: str
+    name: str
+    gender: str
+    dob: date
+    blood_group: str
+    phone: str
+    email: str
+    address: str
+    created_at: datetime
+    updated_at: datetime
+
+    # Allow direct serialization from SQLAlchemy model attributes.
+    model_config = {"from_attributes": True}
+
+    @field_serializer("dob")
+    def serialize_dob(self, value: date) -> str:
+        # Always serialize dates as ISO strings in responses.
+        return value.isoformat()
 
 
 class DoctorResponse(BaseModel):
@@ -152,38 +185,94 @@ class DoctorResponse(BaseModel):
     phone: str
     email: str
     experience_years: int
-    availability: list[Availability]
-    created_at: str
-    updated_at: str
+    availability: List[Availability]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
-def load_patients():
-    if not os.path.exists(PATIENTS_FILE):
-        return []
-    with open(PATIENTS_FILE, "r") as f:
-        return json.load(f)
+class AppointmentStatus(str, Enum):
+    SCHEDULED = "Scheduled"
+    COMPLETED = "Completed"
+    CANCELLED = "Cancelled"
+    NO_SHOW = "No-Show"
 
 
-def save_patients(patients):
-    with open(PATIENTS_FILE, "w") as f:
-        json.dump(patients, f, indent=2)
+class AppointmentCreate(BaseModelMixin):
+    patient_id: str = Field(..., example="d313f43d-09da-491e-b234-cfa7a2836efa")
+    doctor_id: str = Field(..., example="c83d4d6f-ea13-4fad-9b08-b55a1d4cf8d4")
+    appointment_date: str = Field(..., example="2026-07-15", description="Format: YYYY-MM-DD")
+    appointment_start_time: str = Field(
+        ..., pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="09:00"
+    )
+    appointment_end_time: str = Field(
+        ..., pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="10:00"
+    )
+    status: Optional[AppointmentStatus] = Field(None, example="Scheduled")
+    notes: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("appointment_end_time")
+    @classmethod
+    def validate_end_time_after_start(cls, value, info):
+        start_time = info.data.get("appointment_start_time")
+        if start_time and value:
+            start_obj = datetime.strptime(start_time, "%H:%M").time()
+            end_obj = datetime.strptime(value, "%H:%M").time()
+            if start_obj >= end_obj:
+                raise ValueError("End time must be after start time")
+        return value
 
 
-def load_doctors():
-    if not os.path.exists(DOCTORS_FILE):
-        return []
-    with open(DOCTORS_FILE, "r") as f:
-        return json.load(f)
+class AppointmentUpdate(BaseModelMixin):
+    patient_id: Optional[str] = Field(None, example="d313f43d-09da-491e-b234-cfa7a2836efa")
+    doctor_id: Optional[str] = Field(None, example="c83d4d6f-ea13-4fad-9b08-b55a1d4cf8d4")
+    appointment_date: Optional[str] = Field(None, example="2026-07-15", description="Format: YYYY-MM-DD")
+    appointment_start_time: Optional[str] = Field(
+        None, pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="09:00"
+    )
+    appointment_end_time: Optional[str] = Field(
+        None, pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", example="10:00"
+    )
+    status: Optional[AppointmentStatus] = Field(None, example="Completed")
+    notes: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("appointment_end_time")
+    @classmethod
+    def validate_end_time_after_start(cls, value, info):
+        if value is None:
+            return value
+        start_time = info.data.get("appointment_start_time")
+        if start_time and value:
+            start_obj = datetime.strptime(start_time, "%H:%M").time()
+            end_obj = datetime.strptime(value, "%H:%M").time()
+            if start_obj >= end_obj:
+                raise ValueError("End time must be after start time")
+        return value
 
 
-def save_doctors(doctors):
-    with open(DOCTORS_FILE, "w") as f:
-        json.dump(doctors, f, indent=2)
+class AppointmentResponse(BaseModel):
+    id: str
+    patient_id: str
+    doctor_id: str
+    appointment_date: date
+    appointment_start_time: time
+    appointment_end_time: time
+    status: AppointmentStatus
+    notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
 
+    model_config = {"from_attributes": True}
 
-def now_iso():
-    return datetime.now(timezone.utc).isoformat()
+    @field_serializer("appointment_date")
+    def serialize_appointment_date(self, value: date) -> str:
+        return value.isoformat()
 
+    @field_serializer("appointment_start_time")
+    def serialize_appointment_start_time(self, value: time) -> str:
+        return value.strftime("%H:%M")
 
-def generate_uuid():
-      return str(uuid.uuid4())
+    @field_serializer("appointment_end_time")
+    def serialize_appointment_end_time(self, value: time) -> str:
+        return value.strftime("%H:%M")

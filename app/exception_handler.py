@@ -4,10 +4,11 @@ from fastapi.exceptions import RequestValidationError
 
 
 def register_exception_handlers(app: FastAPI):
-    """Register custom exception handlers for the FastAPI app"""
+    """Register custom exception handlers for the FastAPI app."""
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(_request: Request, exc: HTTPException):
+        # Normalize FastAPI HTTPException responses into a consistent JSON payload.
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -19,13 +20,14 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(_request: Request, exc: RequestValidationError):
+        # Convert Pydantic validation errors into a field-level list for the frontend.
         errors = []
         for error in exc.errors():
             field = ".".join(str(loc) for loc in error["loc"])
             errors.append({
                 "field": field,
                 "message": error["msg"],
-                "type": error["type"]
+                "type": error["type"],
             })
         
         return JSONResponse(
@@ -39,6 +41,7 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(Exception)
     async def general_exception_handler(_request: Request, exc: Exception):
+        # Fallback for unexpected errors; keep the API contract consistent.
         return JSONResponse(
             status_code=500,
             content={
