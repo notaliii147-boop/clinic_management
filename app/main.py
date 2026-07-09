@@ -31,6 +31,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/", include_in_schema=False)
 async def root():
+    # Serve the frontend single-page app entrypoint for the root route.
     return FileResponse(STATIC_DIR / "index.html")
 
 
